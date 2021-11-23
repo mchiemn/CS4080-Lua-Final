@@ -90,11 +90,12 @@ local function printMatrix(matrix, slowPrint)
         -- Pause for 2 seconds, then resume the coroutine
         else
             io.write('Loading...')
-            Sleep(2)
+            Sleep(1)
             coroutine.resume(slowPrint)
         end
     end
 end
+
 
 -- Coroutine function that serves to print the result matrix row by row
 local function slowPrinting (matrix)
@@ -170,12 +171,85 @@ local metaTable = {
             end
         end
         return result
+    end,
+    -- Defining equality ==
+    __eq = function(matrix1, matrix2)
+        local result = true
+        for i = 1, #matrix1 do
+            for j = 1, #matrix1[1] do
+                if tonumber(matrix1[i][j]) ~= tonumber(matrix2[i][j]) then
+                    return false
+                end
+            end
+        end
+        return true
     end
 }
 -- Set the metatable to the 2 input tables being used for calculation
 setmetatable(matrix1, metaTable)
 setmetatable(matrix2, metaTable)
 
+local function guessAnswers(resultMatrix)
+  local guessP1, guessP2 = {}, {}
+  setmetatable(guessP1, metaTable)
+  setmetatable(guessP2, metaTable)
+  
+  for i = 1, #resultMatrix do
+    guessP1[i] = {}
+      for j = 1, #resultMatrix[1] do
+          print(string.format('Player %s, enter your guess for the result [%d,%d]: ', player1.name, i, j))
+          guessP1[i][j] = io.read()
+      end
+  end
+  
+  for i = 1, #resultMatrix do
+    guessP2[i] = {}
+      for j = 1, #resultMatrix[1] do
+          print(string.format('Player %s, enter your guess for the result [%d,%d]: ', player2.name, i, j))
+          guessP2[i][j] = io.read()
+      end
+  end
+  
+  local p1Result = (guessP1 == resultMatrix)
+  local p2Result = (guessP2 == resultMatrix)
+  
+  return p1Result, guessP1, p2Result, guessP2
+end
+
+local function amtCorrect(guess, actual)
+    local amt = 0
+    for i = 1, #actual do
+        for j = 1, #actual[1] do
+            if (tonumber(guess[i][j]) == tonumber(actual[i][j])) then
+                amt = amt + 1
+            end
+        end
+    end
+    return amt
+end
+
+local function printResults(p1Correct, p1AmtCorrect, p2Correct, p2AmtCorrect)
+    if (p1Correct and p2Correct) then
+                print(string.format("Both players correctly guessed all %d entries of the result matrix. GG!", p1AmtCorrect))
+            elseif (p1Correct and (not p2Correct)) then
+                print(string.format("Player %s got all entries correct, while player %s only got %d guesses correct.", player1.name, player2.name, p2AmtCorrect))
+            elseif ((not p1Correct) and p2Correct) then
+                print(string.format("Player %s got all entries correct, while player %s only got %d guesses correct.", player2.name, player1.name, p1AmtCorrect))
+            else
+                print(string.format("Both players did not guess the result completely accurate. Player %s got %d guesses correct, while player %s got %d guesses correct.", player1.name, p1AmtCorrect, player2.name, p2AmtCorrect))
+            end
+end
+
+local function guessFlow(matrix, slowPrint)
+    local p1Correct, p1Guess, p2Correct, p2Guess = guessAnswers(matrix)
+    local p1AmtCorrect = amtCorrect(p1Guess, matrix)
+    local p2AmtCorrect = amtCorrect(p2Guess, matrix)
+    --Print matrix
+    print("Correct Answer:")
+    printMatrix(matrix, slowPrint)
+    -- Print player results
+    printResults(p1Correct, p1AmtCorrect, p2Correct, p2AmtCorrect)
+end
 
 local done = false
 -- Repeat: the menu
@@ -196,21 +270,27 @@ repeat
             -- Create a new coroutine for printing the result
             local slowPrint = coroutine.create(slowPrinting)
             local matrix3 = matrix1 * matrix2
-            printMatrix(matrix3, slowPrint)
+            setmetatable(matrix3, metaTable)
+            -- Go through the guess flow, taking in guesses then printing how well they did along with the result
+            guessFlow(matrix3, slowPrint)
         end
     elseif operation == 'A' then
         -- validCheck with 4 arguments
         if validCheck(#matrix1, #matrix1[1], #matrix2, #matrix2[1]) then
             local slowPrint = coroutine.create(slowPrinting)
             local matrix3 = matrix1 + matrix2
-            printMatrix(matrix3, slowPrint)
+            setmetatable(matrix3, metaTable)
+            -- Go through the guess flow, taking in guesses then printing how well they did along with the result
+            guessFlow(matrix3, slowPrint)
         end
     elseif operation == 'S' then
         -- validCheck with 4 arguments
         if validCheck(#matrix1, #matrix1[1], #matrix2, #matrix2[1]) then
             local slowPrint = coroutine.create(slowPrinting)
             local matrix3 = matrix1 - matrix2
-            printMatrix(matrix3, slowPrint)
+            setmetatable(matrix3, metaTable)
+            -- Go through the guess flow, taking in guesses then printing how well they did along with the result
+            guessFlow(matrix3, slowPrint)
         end
     elseif operation == 'NM' then
         -- Create 2 new matricies and set the metatable to them
