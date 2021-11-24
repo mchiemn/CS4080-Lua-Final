@@ -240,15 +240,24 @@ local function printResults(p1Correct, p1AmtCorrect, p2Correct, p2AmtCorrect)
             end
 end
 
+local function printScores()
+    print(string.format("Player 1 %s score: %d", player1.name, player1.score))
+    print(string.format("Player 2 %s score: %d", player2.name, player2.score))
+end
+
 local function guessFlow(matrix, slowPrint)
     local p1Correct, p1Guess, p2Correct, p2Guess = guessAnswers(matrix)
     local p1AmtCorrect = amtCorrect(p1Guess, matrix)
     local p2AmtCorrect = amtCorrect(p2Guess, matrix)
+    player1.score = player1.score + p1AmtCorrect
+    player2.score = player2.score + p2AmtCorrect
     --Print matrix
     print("Correct Answer:")
     printMatrix(matrix, slowPrint)
     -- Print player results
     printResults(p1Correct, p1AmtCorrect, p2Correct, p2AmtCorrect)
+    --Print player scores after
+    printScores()
 end
 
 local done = false
